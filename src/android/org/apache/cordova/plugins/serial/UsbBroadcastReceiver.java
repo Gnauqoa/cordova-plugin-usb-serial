@@ -46,13 +46,13 @@ public class UsbBroadcastReceiver extends BroadcastReceiver {
 		if (USB_PERMISSION.equals(action)) {
       synchronized (this) {
         // deal with the user answer about the permission
-        if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+        // if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
           Log.d(TAG, "Permission to connect to the device was accepted!");
           callbackContext.success("Permission to connect to the device was accepted!");
-        } else {
-          Log.d(TAG, "Permission to connect to the device was denied!");
-          callbackContext.error("Permission to connect to the device was denied!");
-        }
+        // } else {
+        //   Log.d(TAG, "Permission to connect to the device was denied!");
+        //   callbackContext.error("Permission to connect to the device was denied!");
+        // }
         // unregister the broadcast receiver since it's no longer needed
         activity.unregisterReceiver(this);
       }
