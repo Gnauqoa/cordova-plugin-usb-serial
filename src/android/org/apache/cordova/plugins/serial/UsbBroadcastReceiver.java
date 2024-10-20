@@ -1,5 +1,7 @@
 package org.apache.cordova.plugins.serial;
 
+import java.util.HashMap;
+
 import org.apache.cordova.CallbackContext;
 
 import android.app.Activity;
@@ -33,7 +35,6 @@ public class UsbBroadcastReceiver extends BroadcastReceiver {
 		this.activity = activity;
 	}
 
-
 	/**
 	 * Handle permission answer
 	 * @param context
@@ -50,10 +51,10 @@ public class UsbBroadcastReceiver extends BroadcastReceiver {
           Log.d(TAG, "Permission to connect to the device was accepted!");
           callbackContext.success("Permission to connect to the device was accepted!");
         // } else {
-        //   Log.d(TAG, "Permission to connect to the device was denied!");
-        //   callbackContext.error("Permission to connect to the device was denied!");
+          // Log.d(TAG, "Permission to connect to the device was denied!");
+          // callbackContext.error("Permission to connect to the device was denied!");
         // }
-        // unregister the broadcast receiver since it's no longer needed
+
         activity.unregisterReceiver(this);
       }
 		}
