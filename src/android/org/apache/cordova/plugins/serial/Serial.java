@@ -191,17 +191,22 @@ public class Serial extends CordovaPlugin {
     // Iterate through each device and add its info to the JSON array
     while (deviceIterator.hasNext()) {
         UsbDevice usbDevice = deviceIterator.next();
-        JSONObject deviceInfo = new JSONObject();
+
 
         try {
-            // Populate the JSON object with device details
-            deviceInfo.put("deviceId", usbDevice.getDeviceId());
-            deviceInfo.put("deviceName", usbDevice.getDeviceName());
-            deviceInfo.put("productId", usbDevice.getProductId());
-            deviceInfo.put("vendorId", usbDevice.getVendorId());
+					JSONObject json = new JSONObject();
 
-            // Add the device info to the JSON array
-            devicesArray.put(deviceInfo);
+					json.put("deviceName", usbDevice.getDeviceName());
+					json.put("vendorId", usbDevice.getVendorId());
+					json.put("productId", usbDevice.getProductId());
+					json.put("deviceClass", usbDevice.getDeviceClass());
+					json.put("deviceSubclass", usbDevice.getDeviceSubclass());
+					json.put("deviceProtocol", usbDevice.getDeviceProtocol());
+					json.put("version", usbDevice.getVersion());
+					json.put("interfaces", usbDevice.getInterfaceCount());
+					json.put("deviceId", usbDevice.getDeviceId());
+					// Add the device info to the JSON array
+					devicesArray.put(json);
         } catch (JSONException e) {
             Log.e(TAG, "Error creating JSON object for USB device", e);
             callbackContext.error("Error creating JSON object for USB device");
@@ -267,19 +272,29 @@ public class Serial extends CordovaPlugin {
 
 				if (!availableDrivers.isEmpty()) {
 					// get the first one as there is a high chance that there is no more than one usb device attached to your android
+					// Lấy thiết bị và yêu cầu quyền truy cập
 					driver = availableDrivers.get(0);
 					UsbDevice device = driver.getDevice();
-					// create the intent that will be used to get the permission
-					PendingIntent pendingIntent = null;
 
-					pendingIntent = PendingIntent.getBroadcast(cordova.getActivity(), 0, new Intent(UsbBroadcastReceiver.USB_PERMISSION), PendingIntent.FLAG_IMMUTABLE);
+					// Tạo intent dùng để yêu cầu quyền truy cập thiết bị
+					PendingIntent pendingIntent = PendingIntent.getBroadcast(
+							cordova.getActivity(),
+							0,
+							new Intent(UsbBroadcastReceiver.USB_PERMISSION),
+							PendingIntent.FLAG_IMMUTABLE
+					);
 
+					// Tạo IntentFilter để lắng nghe các sự kiện gắn và tháo thiết bị USB
 					IntentFilter filter = new IntentFilter();
 					filter.addAction(UsbBroadcastReceiver.USB_PERMISSION);
-					// this broadcast receiver will handle the permission results
-					UsbBroadcastReceiver usbReceiver = new UsbBroadcastReceiver(callbackContext, cordova.getActivity());
+					filter.addAction(manager.ACTION_USB_DEVICE_ATTACHED);
+					filter.addAction(manager.ACTION_USB_DEVICE_DETACHED);
+
+					// Tạo BroadcastReceiver để xử lý các sự kiện
+					UsbBroadcastReceiver usbReceiver = new UsbBroadcastReceiver(callbackContext, cordova.getActivity(), device);
 					cordova.getActivity().registerReceiver(usbReceiver, filter, cordova.getActivity().RECEIVER_EXPORTED);
-					// finally ask for the permission
+
+					// Yêu cầu quyền truy cập thiết bị USB
 					manager.requestPermission(device, pendingIntent);
 				}
 				else {
