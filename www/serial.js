@@ -23,12 +23,12 @@ const serial = {
       [{ opts: opts }],
     );
   },
-  getActiveDevices: function (successCallback, errorCallback) {
+  getDevices: function (successCallback, errorCallback) {
     cordova.exec(
       successCallback,
       errorCallback,
       "Serial",
-      "getActiveDevices",
+      "getDevices",
       [],
     );
   },

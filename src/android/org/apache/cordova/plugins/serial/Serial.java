@@ -55,7 +55,7 @@ public class Serial extends CordovaPlugin {
 	private static final String ACTION_WRITE_HEX = "writeSerialHex";
 	private static final String ACTION_CLOSE = "closeSerial";
 	private static final String ACTION_READ_CALLBACK = "registerReadCallback";
-  private static final String ACTION_GET_ACTIVE_DEVICES = "getActiveDevices";
+  private static final String ACTION_GET_DEVICES = "getDevices";
   private static final String ACTION_READ_BY_DEVICE_ID = "readSerialByDeviceId";
 	// UsbManager instance to deal with permission and opening
 	private UsbManager manager;
@@ -145,8 +145,8 @@ public class Serial extends CordovaPlugin {
 			return true;
 		}
     // Get active devices
-    else if (ACTION_GET_ACTIVE_DEVICES.equals(action)) {
-      getActiveDevices(callbackContext);
+    else if (ACTION_GET_DEVICES.equals(action)) {
+      getDevices(callbackContext);
       return true;
     }
     // Read by device id
@@ -165,7 +165,7 @@ public class Serial extends CordovaPlugin {
 	 * @return true if the action exists, false otherwise
 	 * @throws JSONException if the args parsing fails
 	 */
-  private void getActiveDevices(final CallbackContext callbackContext) {
+  private void getDevices(final CallbackContext callbackContext) {
     // Get the USB service
     manager = (UsbManager) cordova.getActivity().getSystemService(Context.USB_SERVICE);
 
