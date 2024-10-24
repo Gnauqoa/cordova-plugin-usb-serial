@@ -14,6 +14,15 @@ const serial = {
       [{ opts: opts }],
     );
   },
+  writeSerialByDeviceId: function (opts, successCallback, errorCallback) {
+    cordova.exec(
+      successCallback,
+      errorCallback,
+      "Serial",
+      "writeSerialByDeviceId",
+      [{ opts: opts }],
+    );
+  },
   readSerialByDeviceId: function (opts, successCallback, errorCallback) {
     cordova.exec(
       successCallback,

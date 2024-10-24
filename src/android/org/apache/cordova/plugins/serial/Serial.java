@@ -57,6 +57,7 @@ public class Serial extends CordovaPlugin {
 	private static final String ACTION_READ_CALLBACK = "registerReadCallback";
   private static final String ACTION_GET_DEVICES = "getDevices";
   private static final String ACTION_READ_BY_DEVICE_ID = "readSerialByDeviceId";
+  private static final String ACTION_WRITE_BY_DEVICE_ID = "writeSerialByDeviceId";
 	// UsbManager instance to deal with permission and opening
 	private UsbManager manager;
 	// The current driver that handle the serial port
@@ -68,6 +69,7 @@ public class Serial extends CordovaPlugin {
 	private static final int BUFSIZ = 4096;
 	private final ByteBuffer mReadBuffer = ByteBuffer.allocate(BUFSIZ);
 	// Connection info
+	private int previousOpenDeviceId = -1;
 	private int baudRate;
 	private int dataBits;
 	private int stopBits;
@@ -153,6 +155,10 @@ public class Serial extends CordovaPlugin {
     else if (ACTION_READ_BY_DEVICE_ID.equals(action)) {
       JSONObject opts = arg_object.has("opts")? arg_object.getJSONObject("opts") : new JSONObject();
       readSerialByDeviceId(opts, callbackContext);
+      return true;
+    } else if (ACTION_WRITE_BY_DEVICE_ID.equals(action)) {
+      JSONObject opts = arg_object.has("opts")? arg_object.getJSONObject("opts") : new JSONObject();
+      writeSerialByDeviceId(opts, callbackContext);
       return true;
     }
 		// the action doesn't exist
@@ -326,6 +332,8 @@ public class Serial extends CordovaPlugin {
         port.setParameters(baudRate, dataBits, stopBits, parity);
         if (setDTR) port.setDTR(true);
         if (setRTS) port.setRTS(true);
+
+				previousOpenDeviceId = device.getDeviceId();
       }
       catch (IOException | JSONException e) {
         // deal with error
@@ -417,6 +425,75 @@ public class Serial extends CordovaPlugin {
 		});
 	}
 
+  private boolean runWriteSerial(final String data, final CallbackContext callbackContext) {
+    if (port == null) {
+        callbackContext.error("Cannot write to a closed port.");
+				return false;
+    } else {
+        try {
+            Log.d(TAG, "Writing data: " + data);
+            byte[] buffer = data.getBytes();
+            port.write(buffer, 1000); // Write data to the port with a 1-second timeout
+						return true;
+        } catch (IOException | NullPointerException e) {
+            // Handle the error and report it
+            Log.d(TAG, "Error writing to port: " + Objects.requireNonNull(e.getMessage()));
+            callbackContext.error("Error writing to port: " + e.getMessage());
+						return false;
+        }
+    }
+  }
+
+  private void writeSerialByDeviceId(final JSONObject opts, final CallbackContext callbackContext) {
+    cordova.getThreadPool().execute(new Runnable() {
+      public void run() {
+        UsbDevice usbDevice = null;
+        try {
+          if (!opts.has("deviceId")) {
+            Log.d(TAG, "No device specified.");
+            callbackContext.error("No device specified.");
+            return;
+          }
+
+          if (!opts.has("data")) {
+            Log.d(TAG, "No data specified.");
+            callbackContext.error("No data specified.");
+            return;
+          }
+
+          usbDevice = findDeviceWithId(opts.getInt("deviceId"));
+
+          if (usbDevice == null) {
+            Log.d(TAG, "Device not found.");
+            callbackContext.error("Device not found.");
+            return;
+          }
+
+					if (previousOpenDeviceId != usbDevice.getDeviceId()) {
+						Log.d(TAG, "Device not open: " + usbDevice.getDeviceName());
+						runCloseSerial(callbackContext);
+						runOpenSerial(opts, callbackContext, usbDevice);
+					} else {
+						Log.d(TAG, "Device already open: " + usbDevice.getDeviceName());
+					}
+
+          String data = opts.getString("data");
+
+          boolean status = runWriteSerial(data, callbackContext);
+
+					if (status) {
+						callbackContext.success("Data written successfully!");
+					}
+        }
+        catch (JSONException e) {
+          // deal with error
+          Log.d(TAG, Objects.requireNonNull(e.getMessage()));
+          callbackContext.error(e.getMessage());
+        }
+      }
+    });
+  }
+
 	/**
 	 * Write hex on the serial port
 	 * @param data the {@link String} representation of the data to be written on the port as hexadecimal string
@@ -463,7 +540,6 @@ public class Serial extends CordovaPlugin {
 
 	private UsbDevice findDeviceWithId(int deviceId) {
     HashMap<String, UsbDevice> deviceList = manager.getDeviceList();
-
     if (deviceList.isEmpty()) {
       Log.d(TAG, "No USB devices found");
       return null;
@@ -472,6 +548,7 @@ public class Serial extends CordovaPlugin {
     UsbDevice usbDevice = null;
     for (UsbDevice device : deviceList.values()) {
       if (device.getDeviceId() == deviceId) {
+				Log.d(TAG, "Device found in devices list: " + device.getDeviceName());
         usbDevice = device;
         break;
       }
@@ -504,7 +581,14 @@ public class Serial extends CordovaPlugin {
 						return;
 					}
 					Log.d(TAG, "Device found: " + usbDevice.getDeviceName());
-					runOpenSerial(opts, callbackContext, usbDevice);
+
+					if (previousOpenDeviceId != usbDevice.getDeviceId()) {
+						Log.d(TAG, "Device not open: " + usbDevice.getDeviceName());
+						runCloseSerial(callbackContext);
+						runOpenSerial(opts, callbackContext, usbDevice);
+					} else {
+						Log.d(TAG, "Device already open: " + usbDevice.getDeviceName());
+					}
 
 					// Ensure read operation completes before closing
 					final byte[] data = runReadSerial(callbackContext);
@@ -513,7 +597,6 @@ public class Serial extends CordovaPlugin {
 					PluginResult.Status status = PluginResult.Status.OK;
 					callbackContext.sendPluginResult(new PluginResult(status, data));
 
-					runCloseSerial(callbackContext);
 				}
 				catch (JSONException e) {
 					// deal with error
