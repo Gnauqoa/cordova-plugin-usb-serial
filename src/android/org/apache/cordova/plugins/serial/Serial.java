@@ -58,6 +58,7 @@ public class Serial extends CordovaPlugin {
   private static final String ACTION_GET_DEVICES = "getDevices";
   private static final String ACTION_READ_BY_DEVICE_ID = "readSerialByDeviceId";
   private static final String ACTION_WRITE_BY_DEVICE_ID = "writeSerialByDeviceId";
+  private static final String ACTION_OPEN_BY_DEVICE_ID = "openSerialByDeviceId";
 	// UsbManager instance to deal with permission and opening
 	private UsbManager manager;
 	// The current driver that handle the serial port
@@ -160,10 +161,71 @@ public class Serial extends CordovaPlugin {
       JSONObject opts = arg_object.has("opts")? arg_object.getJSONObject("opts") : new JSONObject();
       writeSerialByDeviceId(opts, callbackContext);
       return true;
+    } else if (ACTION_OPEN_BY_DEVICE_ID.equals(action)) {
+      JSONObject opts = arg_object.has("opts")? arg_object.getJSONObject("opts") : new JSONObject();
+      openSerialByDeviceId(opts, callbackContext);
+      return true;
     }
 		// the action doesn't exist
 		return false;
 	}
+
+  /**
+   * Connect to device
+   * @param callbackContext
+   */
+  private void openSerialByDeviceId(final JSONObject opts, final CallbackContext callbackContext){
+    cordova.getThreadPool().execute(new Runnable() {
+			public void run() {
+        if (driver == null) {
+          callbackContext.error("Request permissions before attempting opening port");
+          return;
+        }
+				try {
+					int deviceId = opts.has("deviceId") ? opts.getInt("deviceId") : 1013;
+					UsbDevice device = findDeviceWithId(deviceId);
+
+					UsbDeviceConnection connection = manager.openDevice(device);
+
+					if (connection != null) {
+						// get first port and open it
+						port = driver.getPorts().get(0);
+
+						// get connection params or the default values
+						baudRate = opts.has("baudRate") ? opts.getInt("baudRate") : 115200;
+						dataBits = opts.has("dataBits") ? opts.getInt("dataBits") : UsbSerialPort.DATABITS_8;
+						stopBits = opts.has("stopBits") ? opts.getInt("stopBits") : UsbSerialPort.STOPBITS_1;
+						parity = opts.has("parity") ? opts.getInt("parity") : UsbSerialPort.PARITY_NONE;
+						setDTR = opts.has("dtr") && opts.getBoolean("dtr");
+						setRTS = opts.has("rts") && opts.getBoolean("rts");
+						// Sleep On Pause defaults to true
+						sleepOnPause = !opts.has("sleepOnPause") || opts.getBoolean("sleepOnPause");
+
+						port.open(connection);
+						port.setParameters(baudRate, dataBits, stopBits, parity);
+						if (setDTR) port.setDTR(true);
+						if (setRTS) port.setRTS(true);
+
+
+
+						Log.d(TAG, "Serial port opened!");
+						callbackContext.success("Serial port opened!");
+					}
+					else {
+						Log.d(TAG, "Cannot connect to the device!");
+						callbackContext.error("Cannot connect to the device!");
+					}
+
+					onDeviceStateChange();
+				}
+				catch (IOException | JSONException e) {
+					// deal with error
+					Log.d(TAG, Objects.requireNonNull(e.getMessage()));
+					callbackContext.error(e.getMessage());
+				}
+			}
+		});
+  }
 
 	/**
 	 * Overridden execute method

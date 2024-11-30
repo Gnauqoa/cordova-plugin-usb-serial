@@ -1,4 +1,13 @@
 const serial = {
+  openSerialByDeviceId: function (opts, successCallback, errorCallback) {
+    cordova.exec(
+      successCallback,
+      errorCallback,
+      "Serial",
+      "openSerialByDeviceId",
+      [{ opts: opts }],
+    );
+  },
   requestPermission: function (opts, successCallback, errorCallback) {
     if (typeof opts === "function") {
       //user did not pass opts
