@@ -71,6 +71,15 @@ const serial = {
   close: function (successCallback, errorCallback) {
     cordova.exec(successCallback, errorCallback, "Serial", "closeSerial", []);
   },
+  registerDetachCallback: function (successCallback, errorCallback) {
+    cordova.exec(
+      successCallback,
+      errorCallback,
+      "Serial",
+      "registerDetachCallback",
+      [],
+    );
+  },
   registerReadCallback: function (successCallback, errorCallback) {
     cordova.exec(
       successCallback,
