@@ -24,7 +24,8 @@ public class UsbBroadcastReceiver extends BroadcastReceiver {
   // logging tag
   private final String TAG = UsbBroadcastReceiver.class.getSimpleName();
   // usb permission tag name
-  public static final String USB_PERMISSION = "org.apache.cordova.plugins.serial.USB_PERMISSION";
+  public static final String USB_PERMISSION =
+    "org.apache.cordova.plugins.serial.USB_PERMISSION";
   // cordova callback context to notify the success/error to the cordova app
   private CallbackContext callbackContext;
   // cordova activity to use it to unregister this broadcast receiver
@@ -36,7 +37,11 @@ public class UsbBroadcastReceiver extends BroadcastReceiver {
    * @param callbackContext
    * @param activity
    */
-  public UsbBroadcastReceiver(CallbackContext callbackContext, Activity activity, UsbDevice deviceRequest) {
+  public UsbBroadcastReceiver(
+    CallbackContext callbackContext,
+    Activity activity,
+    UsbDevice deviceRequest
+  ) {
     this.callbackContext = callbackContext;
     this.activity = activity;
     this.deviceRequest = deviceRequest;
@@ -60,7 +65,7 @@ public class UsbBroadcastReceiver extends BroadcastReceiver {
         try {
           JSONObject json = new JSONObject();
 
-					json.put("deviceId", deviceRequest.getDeviceId());
+          json.put("deviceId", deviceRequest.getDeviceId());
           json.put("deviceName", deviceRequest.getDeviceName());
           json.put("vendorId", deviceRequest.getVendorId());
           json.put("productId", deviceRequest.getProductId());
@@ -73,7 +78,9 @@ public class UsbBroadcastReceiver extends BroadcastReceiver {
           callbackContext.success(json);
         } catch (JSONException e) {
           Log.d(TAG, "Error creating JSON object: " + e.getMessage());
-          callbackContext.error("Error creating JSON object: " + e.getMessage());
+          callbackContext.error(
+            "Error creating JSON object: " + e.getMessage()
+          );
         }
         // } else {
         //   Log.d(TAG, "Permission to connect to the device was denied!");
@@ -81,11 +88,15 @@ public class UsbBroadcastReceiver extends BroadcastReceiver {
         // }
       }
     } else if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
-      UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+      UsbDevice device = (UsbDevice) intent.getParcelableExtra(
+        UsbManager.EXTRA_DEVICE
+      );
       Log.d(TAG, "USB Device Attached: " + device);
       callbackContext.success("USB Device Attached: " + device.getDeviceName());
     } else if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
-      UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+      UsbDevice device = (UsbDevice) intent.getParcelableExtra(
+        UsbManager.EXTRA_DEVICE
+      );
       Log.d(TAG, "USB Device Detached: " + device);
       callbackContext.success("USB Device Detached: " + device.getDeviceName());
     }
