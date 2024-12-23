@@ -24,7 +24,8 @@ public class UsbBroadcastReceiver extends BroadcastReceiver {
   // logging tag
   private final String TAG = UsbBroadcastReceiver.class.getSimpleName();
   // usb permission tag name
-  public static final String USB_PERMISSION = "org.apache.cordova.plugins.serial.USB_PERMISSION";
+  public static final String USB_PERMISSION =
+    "org.apache.cordova.plugins.serial.USB_PERMISSION";
   // cordova callback context to notify the success/error to the cordova app
   private RequestPermissionCallback requestPermissionCallback;
   // cordova activity to use it to unregister this broadcast receiver
@@ -84,11 +85,15 @@ public class UsbBroadcastReceiver extends BroadcastReceiver {
         // }
       }
     } else if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
-      UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+      UsbDevice device = (UsbDevice) intent.getParcelableExtra(
+        UsbManager.EXTRA_DEVICE
+      );
       Log.d(TAG, "USB Device Attached: " + device);
       requestPermissionCallback.success(deviceRequest);
     } else if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
-      UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+      UsbDevice device = (UsbDevice) intent.getParcelableExtra(
+        UsbManager.EXTRA_DEVICE
+      );
       Log.d(TAG, "USB Device Detached: " + device);
       requestPermissionCallback.success(deviceRequest);
     }
