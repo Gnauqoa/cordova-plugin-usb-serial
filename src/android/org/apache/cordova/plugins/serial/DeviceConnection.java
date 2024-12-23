@@ -9,16 +9,26 @@ import android.hardware.usb.UsbManager;
 
 public class DeviceConnection {
 
-  private UsbDevice device;
-  private UsbDeviceConnection connection;
+  private UsbDevice device = null;
+  private UsbDeviceConnection connection = null;
 
-  public DeviceConnection(UsbDevice device, UsbDeviceConnection connection) {
+  public DeviceConnection(UsbDevice device) {
     this.device = device;
-    this.connection = connection;
+    // this.connection = connection;
   }
 
   public UsbDevice getDevice() {
     return device;
+  }
+
+  public void close() {
+    if (connection != null) {
+      connection.close();
+    }
+  }
+
+  public boolean isOpen() {
+    return connection != null;
   }
 
   public void setDevice(UsbDevice device) {
