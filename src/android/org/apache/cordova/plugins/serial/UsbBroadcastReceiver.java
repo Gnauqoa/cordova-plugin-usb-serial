@@ -27,22 +27,22 @@ public class UsbBroadcastReceiver extends BroadcastReceiver {
   public static final String USB_PERMISSION =
     "org.apache.cordova.plugins.serial.USB_PERMISSION";
   // cordova callback context to notify the success/error to the cordova app
-  private CallbackContext callbackContext;
+  private RequestPermissionCallback requestPermissionCallback;
   // cordova activity to use it to unregister this broadcast receiver
   private Activity activity;
   private UsbDevice deviceRequest;
 
   /**
    * Custom broadcast receiver that will handle the cordova callback context
-   * @param callbackContext
+   * @param requestPermissionCallback
    * @param activity
    */
   public UsbBroadcastReceiver(
-    CallbackContext callbackContext,
+    RequestPermissionCallback requestPermissionCallback,
     Activity activity,
     UsbDevice deviceRequest
   ) {
-    this.callbackContext = callbackContext;
+    this.requestPermissionCallback = requestPermissionCallback;
     this.activity = activity;
     this.deviceRequest = deviceRequest;
   }
@@ -56,7 +56,7 @@ public class UsbBroadcastReceiver extends BroadcastReceiver {
   @Override
   public void onReceive(Context context, Intent intent) {
     String action = intent.getAction();
-    Log.d(TAG, "onReceive: " + action);
+    Log.d(TAG, "Action: " + action);
 
     if (USB_PERMISSION.equals(action)) {
       synchronized (this) {
@@ -75,16 +75,13 @@ public class UsbBroadcastReceiver extends BroadcastReceiver {
           json.put("version", deviceRequest.getVersion());
           json.put("interfaces", deviceRequest.getInterfaceCount());
 
-          callbackContext.success(json);
+          requestPermissionCallback.success(deviceRequest);
         } catch (JSONException e) {
           Log.d(TAG, "Error creating JSON object: " + e.getMessage());
-          callbackContext.error(
-            "Error creating JSON object: " + e.getMessage()
-          );
         }
         // } else {
         //   Log.d(TAG, "Permission to connect to the device was denied!");
-        //   callbackContext.error("Permission to connect to the device was denied!");
+        //   requestPermissionCallback.error("Permission to connect to the device was denied!");
         // }
       }
     } else if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
@@ -92,13 +89,13 @@ public class UsbBroadcastReceiver extends BroadcastReceiver {
         UsbManager.EXTRA_DEVICE
       );
       Log.d(TAG, "USB Device Attached: " + device);
-      callbackContext.success("USB Device Attached: " + device.getDeviceName());
+      requestPermissionCallback.success(deviceRequest);
     } else if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
       UsbDevice device = (UsbDevice) intent.getParcelableExtra(
         UsbManager.EXTRA_DEVICE
       );
       Log.d(TAG, "USB Device Detached: " + device);
-      callbackContext.success("USB Device Detached: " + device.getDeviceName());
+      requestPermissionCallback.success(deviceRequest);
     }
 
     activity.unregisterReceiver(this);
