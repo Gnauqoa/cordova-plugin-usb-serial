@@ -21,9 +21,11 @@ import com.hoho.android.usbserial.driver.UsbSerialProber;
 import com.hoho.android.usbserial.util.SerialInputOutputManager;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -53,8 +55,7 @@ public class Serial extends CordovaPlugin {
   private static final String ACTION_READ_CALLBACK = "registerReadCallback";
   private static final String ACTION_GET_DEVICES = "getDevices";
   private static final String ACTION_READ_BY_DEVICE_ID = "readSerialByDeviceId";
-  private static final String ACTION_WRITE_BY_DEVICE_ID =
-    "writeSerialByDeviceId";
+  private static final String ACTION_WRITE_BY_DEVICE_ID = "writeSerialByDeviceId";
   private static final String ACTION_OPEN_BY_DEVICE_ID = "openSerialByDeviceId";
   private static final String ACTION_REGISTER_DETACH_CALLBACK = "registerDetachCallback";
   // UsbManager instance to deal with permission and opening
@@ -249,8 +250,7 @@ public class Serial extends CordovaPlugin {
    */
   private void getDevices(final CallbackContext callbackContext) {
     // Get the USB service
-    manager =
-      (UsbManager) cordova.getActivity().getSystemService(Context.USB_SERVICE);
+    manager = (UsbManager) cordova.getActivity().getSystemService(Context.USB_SERVICE);
 
     if (manager == null) {
       Log.e(TAG, "UsbManager is null");
@@ -304,21 +304,26 @@ public class Serial extends CordovaPlugin {
     if (deviceConnections.isEmpty()) {
       return;
     }
+    Log.d(TAG, "Device connections: " + deviceConnections.size());
 
     manager = (UsbManager) cordova.getActivity().getSystemService(Context.USB_SERVICE);
 
     HashMap<String, UsbDevice> deviceList = manager.getDeviceList();
 
-    if (deviceList.isEmpty()) {
-      // Log.d(TAG, "No USB devices found");
+    // List to store device IDs that need to be removed
+    List<Integer> devicesToRemove = new ArrayList<>();
 
+    if (deviceList.isEmpty()) {
       for (DeviceConnection deviceConnection : deviceConnections.values()) {
         UsbDevice device = deviceConnection.getDevice();
         UsbDeviceConnection connection = deviceConnection.getConnection();
+
         if (connection != null) {
           connection.close();
         }
-        deviceConnections.remove(device.getDeviceId());
+
+        // Add the device ID to the list for removal
+        devicesToRemove.add(device.getDeviceId());
 
         JSONObject returnObj = new JSONObject();
         addProperty(returnObj, "device", deviceToJSONObj(device));
@@ -327,25 +332,35 @@ public class Serial extends CordovaPlugin {
         pluginResult.setKeepCallback(true);
         detachCallback.sendPluginResult(pluginResult);
       }
-      return;
+    } else {
+      for (DeviceConnection deviceConnection : deviceConnections.values()) {
+        UsbDevice device = deviceConnection.getDevice();
+
+        if (!deviceList.containsValue(device)) {
+          UsbDeviceConnection connection = deviceConnection.getConnection();
+
+          if (connection != null) {
+            connection.close();
+          }
+
+          // Add the device ID to the list for removal
+          devicesToRemove.add(device.getDeviceId());
+
+          JSONObject returnObj = new JSONObject();
+          addProperty(returnObj, "device", deviceToJSONObj(device));
+
+          PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, returnObj);
+          pluginResult.setKeepCallback(true);
+          detachCallback.sendPluginResult(pluginResult);
+        }
+      }
     }
 
-    for (DeviceConnection deviceConnection : deviceConnections.values()) {
-      UsbDevice device = deviceConnection.getDevice();
-      if (!deviceList.containsValue(device)) {
-        UsbDeviceConnection connection = deviceConnection.getConnection();
-
-        connection.close();
-
-        deviceConnections.remove(device.getDeviceId());
-
-        JSONObject returnObj = new JSONObject();
-        addProperty(returnObj, "device", deviceToJSONObj(device));
-
-        PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, returnObj);
-        pluginResult.setKeepCallback(true);
-        detachCallback.sendPluginResult(pluginResult);
-      }
+    // Remove devices from `deviceConnections` after iteration
+    for (int deviceId : devicesToRemove) {
+      deviceConnections.remove(deviceId);
+      Log.d(TAG, "Device removed: " + deviceId);
+      Log.d(TAG, "Device connections after d: " + deviceConnections.size());
     }
   }
 
