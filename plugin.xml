@@ -8,7 +8,7 @@
     <license>MIT</license>
     <keywords>serial,arduino</keywords>
     <engines>
-        <engine name="cordova" version=">=12.0.0"/>
+        <engine name="cordova" version=">=12.0.0" />
     </engines>
 
 
@@ -21,11 +21,18 @@
     <platform name="android">
         <config-file target="res/xml/config.xml" parent="/*">
             <feature name="Serial">
-                <param name="android-package" value="org.apache.cordova.plugins.serial.Serial"/>
+                <param name="android-package" value="org.apache.cordova.plugins.serial.Serial" />
             </feature>
         </config-file>
-        <framework src="src/android/usb-serial.gradle" custom="true" type="gradleReference"/>
-        <source-file src="src/android/org/apache/cordova/plugins/serial/Serial.java" target-dir="src/org/apache/cordova/plugins/serial" />
-        <source-file src="src/android/org/apache/cordova/plugins/serial/UsbBroadcastReceiver.java" target-dir="src/org/apache/cordova/plugins/serial" />
+        <framework src="src/android/usb-serial.gradle" custom="true" type="gradleReference" />
+        <source-file src="src/android/org/apache/cordova/plugins/serial/Serial.java"
+            target-dir="src/org/apache/cordova/plugins/serial" />
+        <source-file src="src/android/org/apache/cordova/plugins/serial/UsbBroadcastReceiver.java"
+            target-dir="src/org/apache/cordova/plugins/serial" />
+        <source-file src="src/android/org/apache/cordova/plugins/serial/DeviceConnection.java"
+            target-dir="src/org/apache/cordova/plugins/serial" />
+        <source-file src="src/android/org/apache/cordova/plugins/serial/RequestPermissionCallback.java"
+            target-dir="src/org/apache/cordova/plugins/serial" />
+
     </platform>
 </plugin>
